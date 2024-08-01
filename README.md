@@ -16,6 +16,10 @@
 
 •  Swagger
 
+•  WireMock
+
+•  Lombok
+
 
 ## Установка и настройка
 
@@ -40,7 +44,7 @@ spring.jpa.show-sql=true
 
 INSERT INTO account (id, account_number, balance, recipient_name, pin_code) VALUES
 (1, '1234567890', 1000.00, 'Ivan Ivanov', '1234'),
-(2, '0987654321', 2000.00, 'Den Kruglov', '5678');
+(2, '0987654321', 2000.00, 'Den Krylov', '5678');
 
 INSERT INTO transaction (id, account_id, amount, type, timestamp) VALUES
 (1, 1, 1000.00, 'DEPOSIT', NOW()),
@@ -67,11 +71,11 @@ private AccountRepository accountRepository;
 
 @PostConstruct
 public void init() {
-Account account1 = new Account("John Doe", "1234");
+Account account1 = new Account("Ivan Ivanov", "1234");
 account1.setBalance(new BigDecimal("1000.00"));
 accountRepository.save(account1);
 
-Account account2 = new Account("Jane Smith", "5678");
+Account account2 = new Account("Den Krylov", "5678");
 account2.setBalance(new BigDecimal("2000.00"));
 accountRepository.save(account2);
 }
@@ -88,7 +92,7 @@ mvn spring-boot:run
 POST /api/accounts
 
 {
-"recipientName": "John Doe",
+"recipientName": "Ivan Ivanov",
 "pinCode": "1234"
 }
 
@@ -128,13 +132,96 @@ GET /api/accounts/{id}/transactions
 Получение всех счетов (только для администраторов)
 GET /api/accounts/admin/all
 
+WireMockServer и WireMockTest
+WireMockServer
+WireMock используется для создания мока HTTP-сервисов. Это позволяет тестировать взаимодействие с внешними сервисами без необходимости их реального вызова.
+
+WireMockTest
+Пример теста с использованием WireMock:
+
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
+import com.github.tomakehurst.wiremock.client.WireMock;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
+import static org.awaitility.Awaitility.await;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+
+@Slf4j
+public class WireMockTest {
+private static GenericContainer<?> wireMockContainer;
+
+@BeforeAll
+public static void setUp() {
+wireMockContainer = new GenericContainer<>(DockerImageName.parse("rodolpheche/wiremock"))
+.withExposedPorts(8080) 
+.withCommand("--verbose")
+.withStartupTimeout(Duration.ofMinutes(2)) 
+.withLogConsumer(new Slf4jLogConsumer(log));
+wireMockContainer.start();
+log.info("WireMock container started at: {}:{}", wireMockContainer.getHost(), wireMockContainer.getMappedPort(8080));
+
+WireMock.configureFor(wireMockContainer.getHost(), wireMockContainer.getMappedPort(8080));
+stubFor(get(urlEqualTo("/hellowiremock"))
+.willReturn(aResponse()
+.withStatus(200)
+.withBody("{\"message\": \"Hello, WireMock!\"}")));
+
+await().atMost(10, TimeUnit.SECONDS).until(wireMockContainer::isRunning);
+}
+
+@AfterAll
+public static void tearDown() {
+if (wireMockContainer != null && wireMockContainer.isRunning()) {
+wireMockContainer.stop();
+log.info("WireMock container stopped.");
+}
+}
+
+@Test
+public void testWireMock() {
+if (wireMockContainer == null || !wireMockContainer.isRunning()) {
+throw new IllegalStateException("WireMock container is not running");
+}
+
+String wireMockUrl = "http://" + wireMockContainer.getHost() + ":" + wireMockContainer.getMappedPort(8080);
+
+try (GenericContainer<?> ignored = wireMockContainer) {
+given()
+.when()
+.get(wireMockUrl + "/hellowiremock")
+.then()
+.statusCode(200)
+.body("message", equalTo("Hello, WireMock!"));
+} catch (Exception e) {
+log.error("Error during WireMock test", e);
+}
+}
+}
+
 Принятые решения при разработке:
-1. Использование Spring Boot и Spring Data JPA: Эти технологии были выбраны для упрощения разработки и управления базой данных.
-2. PostgreSQL: Выбор PostgreSQL в качестве базы данных обусловлен его надежностью и широкими возможностями.
-3. Spring Security: Добавлен уровень авторизации с разграничением по ролям для обеспечения безопасности.
-4. Валидация PIN-кода: Все операции по списанию средств требуют правильного PIN-кода для обеспечения безопасности.
-5. История транзакций: Все изменения баланса сохраняются в истории транзакций для обеспечения прозрачности и отслеживания операций.
-6. Обработка ошибок: Включена обработка ошибок и возвращение соответствующих кодов ошибок для всех операций.
-7. Заполнение базы данных исходными данными: Добавлены сценарии для заполнения базы данных исходными данными при запуске приложения.
+1. 
+Использование Spring Boot и Spring Data JPA: Эти технологии были выбраны для упрощения разработки и управления базой данных.
+2. 
+PostgreSQL: Выбор PostgreSQL в качестве базы данных обусловлен его надежностью и широкими возможностями.
+3. 
+Spring Security: Добавлен уровень авторизации с разграничением по ролям для обеспечения безопасности.
+4. 
+Валидация PIN-кода: Все операции по списанию средств требуют правильного PIN-кода для обеспечения безопасности.
+5. 
+История транзакций: Все изменения баланса сохраняются в истории транзакций для обеспечения прозрачности и отслеживания операций.
+6. 
+Обработка ошибок: Включена обработка ошибок и возвращение соответствующих кодов ошибок для всех операций.
+7. 
+Заполнение базы данных исходными данными: Добавлены сценарии для заполнения базы данных исходными данными при запуске приложения.
 
 Если у вас возникнут вопросы или потребуется дополнительная помощь, пишите: https://join.skype.com/invite/CyTQpYrRyGqg

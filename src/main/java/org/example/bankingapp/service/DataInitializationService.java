@@ -23,9 +23,5 @@ public class DataInitializationService {
         Account account2 = new Account("Den Krylov", "5678");
         account2.setBalance(new BigDecimal("2000.00"));
         accountRepository.save(account2);
-
-        Account account3 = new Account("Alex Petrov", "4321");
-        account3.setBalance(new BigDecimal("3000.00"));
-        accountRepository.save(account3);
     }
 }
