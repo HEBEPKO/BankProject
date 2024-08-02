@@ -1,4 +1,4 @@
-package org.example.bankingapp.request;
+package org.example.bankingapp.dto;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -7,8 +7,7 @@ import java.math.BigDecimal;
 
 @Setter
 @Getter
-public class TransferRequest {
-    private Long toAccountId;
+public class WithdrawDto {
     private BigDecimal amount;
     private String pinCode;
 }

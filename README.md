@@ -1,10 +1,12 @@
 # Banking Application API
 
 ## Описание
+
 Это приложение представляет собой банковскую систему, позволяющую создавать учетные записи, вносить, снимать и переводить деньги между счетами, а также просматривать историю транзакций.
 
 ## Технологии
-•  Java
+
+•  Java 17
 
 •  Spring Boot
 
@@ -20,15 +22,23 @@
 
 •  Lombok
 
+•  Flyway
+
 
 ## Установка и настройка
 
-### Шаг 1: Клонирование репозитория
-```bash
+<details>
+<summary>Шаг 1: Клонирование репозитория</summary>
+
+
 git clone https://github.com/xJOHNJAx/BankProject.git
 cd BankProject
 
-Шаг 2: Настройка базы данных
+</details>
+
+<details>
+<summary>Шаг 2: Настройка базы данных</summary>
+
 Создайте базу данных PostgreSQL и настройте подключение в файле src/main/resources/application.properties:
 
 spring.datasource.url=jdbc:postgresql://localhost:5432/banking_app
@@ -38,7 +48,11 @@ spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
 
-Шаг 3: Заполнение базы данных исходными данными
+</details>
+
+<details>
+<summary>Шаг 3: Заполнение базы данных исходными данными</summary>
+
 Вариант 1: Использование data.sql
 Создайте файл src/main/resources/data.sql и добавьте в него SQL-запросы для вставки исходных данных:
 
@@ -81,14 +95,26 @@ accountRepository.save(account2);
 }
 }
 
-Шаг 4: Запуск приложения
+</details>
+
+<details>
+<summary>Шаг 4: Запуск приложения</summary>
+
 mvn spring-boot:run
 
-Шаг 5: Доступ к документации Swagger
-После запуска приложения вы можете получить доступ к документации Swagger по адресу: http://localhost:8080/swagger-ui.html.
+</details>
 
-Использование API
-Создание учетной записи
+<details>
+<summary>Шаг 5: Доступ к документации Swagger
+</summary>
+
+После запуска приложения вы можете получить доступ к документации Swagger по адресу: http://localhost:8080/swagger-ui.html.
+</details>
+
+<details>
+<summary>Использование API
+Создание учетной записи</summary>
+
 POST /api/accounts
 
 {
@@ -130,9 +156,10 @@ GET /api/accounts/{id}
 GET /api/accounts/{id}/transactions
 
 Получение всех счетов (только для администраторов)
-GET /api/accounts/admin/all
+GET /api/accounts/admin/all</details>
 
-WireMockServer и WireMockTest
+<details>
+<summary>WireMockServer и WireMockTest</summary>
 WireMockServer
 WireMock используется для создания мока HTTP-сервисов. Это позволяет тестировать взаимодействие с внешними сервисами без необходимости их реального вызова.
 
@@ -163,9 +190,9 @@ private static GenericContainer<?> wireMockContainer;
 @BeforeAll
 public static void setUp() {
 wireMockContainer = new GenericContainer<>(DockerImageName.parse("rodolpheche/wiremock"))
-.withExposedPorts(8080) 
+.withExposedPorts(8080)
 .withCommand("--verbose")
-.withStartupTimeout(Duration.ofMinutes(2)) 
+.withStartupTimeout(Duration.ofMinutes(2))
 .withLogConsumer(new Slf4jLogConsumer(log));
 wireMockContainer.start();
 log.info("WireMock container started at: {}:{}", wireMockContainer.getHost(), wireMockContainer.getMappedPort(8080));
@@ -206,22 +233,72 @@ given()
 log.error("Error during WireMock test", e);
 }
 }
-}
+}</details>
 
-Принятые решения при разработке:
+
+<details>
+<summary>Использование Flyway</summary>
+Для управления миграциями базы данных используется Flyway. Flyway автоматически применяет миграции при запуске приложения.
+
+Настройка Flyway
 1. 
-Использование Spring Boot и Spring Data JPA: Эти технологии были выбраны для упрощения разработки и управления базой данных.
-2. 
-PostgreSQL: Выбор PostgreSQL в качестве базы данных обусловлен его надежностью и широкими возможностями.
-3. 
-Spring Security: Добавлен уровень авторизации с разграничением по ролям для обеспечения безопасности.
-4. 
-Валидация PIN-кода: Все операции по списанию средств требуют правильного PIN-кода для обеспечения безопасности.
-5. 
-История транзакций: Все изменения баланса сохраняются в истории транзакций для обеспечения прозрачности и отслеживания операций.
-6. 
-Обработка ошибок: Включена обработка ошибок и возвращение соответствующих кодов ошибок для всех операций.
-7. 
-Заполнение базы данных исходными данными: Добавлены сценарии для заполнения базы данных исходными данными при запуске приложения.
+Добавьте зависимость Flyway в pom.xml:
 
-Если у вас возникнут вопросы или потребуется дополнительная помощь, пишите: https://join.skype.com/invite/CyTQpYrRyGqg
+<dependency>
+<groupId>org.flywaydb</groupId>
+<artifactId>flyway-core</artifactId>
+</dependency>
+
+1. 
+Создайте директорию для миграций:
+
+mkdir -p src/main/resources/db/migration
+
+1. 
+Создайте файл миграции, например, V1__init.sql:
+
+-- Создание таблицы account
+CREATE TABLE account (
+id SERIAL PRIMARY KEY,
+account_number VARCHAR(20) NOT NULL,
+balance DECIMAL(19, 2) NOT NULL,
+recipient_name VARCHAR(100) NOT NULL,
+pin_code VARCHAR(4) NOT NULL
+);
+
+-- Вставка исходных данных в таблицу account
+INSERT INTO account (account_number, balance, recipient_name, pin_code) VALUES
+('1234567890', 1000.00, 'Ivan Ivanov', '1234'),
+('0987654321', 2000.00, 'Den Krylov', '5678');
+
+-- Создание таблицы bank_transaction
+CREATE TABLE bank_transaction (
+id SERIAL PRIMARY KEY,
+account_id BIGINT NOT NULL,
+amount DECIMAL(19, 2) NOT NULL,
+type VARCHAR(20) NOT NULL,
+timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+FOREIGN KEY (account_id) REFERENCES account(id)
+);
+
+-- Вставка исходных данных в таблицу bank_transaction
+INSERT INTO bank_transaction (account_id, amount, type) VALUES
+(1, 1000.00, 'DEPOSIT'),
+(2, 2000.00, 'DEPOSIT');
+
+1. 
+Настройте Flyway в application.properties:
+
+spring.flyway.enabled=true
+spring.flyway.locations=classpath:db/migration
+spring.flyway.baseline-on-migrate=true</details>
+
+Принятые решения при разработке
+1. Использование Spring Boot и Spring Data JPA: Эти технологии были выбраны для упрощения разработки и управления базой данных.
+2. PostgreSQL: Выбор PostgreSQL в качестве базы данных обусловлен его надежностью и широкими возможностями.
+3. Spring Security: Добавлен уровень авторизации с разграничением по ролям для обеспечения безопасности.
+4. Валидация PIN-кода: Все операции по списанию средств требуют правильного PIN-кода для обеспечения безопасности.
+5. История транзакций: Все изменения баланса сохраняются в истории транзакций для обеспечения прозрачности и отслеживания операций.
+6.  Заполнение базы данных исходными данными: Добавлены сценарии для заполнения базы данных исходными данными при запуске приложения.
+
+Если у вас возникнут вопросы или потребуется дополнительная помощь, пишите: https://join.skype.com/zm3rWLuIjC3O

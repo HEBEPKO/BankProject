@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Setter
 @Getter
 @Entity
-public class Transaction {
+public class BankTransaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -19,10 +19,10 @@ public class Transaction {
     private LocalDateTime timestamp;
     private String type; // DEPOSIT, WITHDRAWAL, TRANSFER
 
-    public Transaction() {
+    public BankTransaction() {
     }
 
-    public Transaction(Long accountId, BigDecimal amount, String type) {
+    public BankTransaction(Long accountId, BigDecimal amount, String type) {
         this.accountId = accountId;
         this.amount = amount;
         this.type = type;

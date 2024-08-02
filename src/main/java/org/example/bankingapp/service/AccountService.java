@@ -1,9 +1,8 @@
 package org.example.bankingapp.service;
 
 import org.example.bankingapp.model.Account;
-import org.example.bankingapp.model.Transaction;
+import org.example.bankingapp.model.BankTransaction;
 import org.example.bankingapp.repository.AccountRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -13,10 +12,14 @@ import java.util.Optional;
 
 @Service
 public class AccountService {
-    @Autowired
-    private AccountRepository accountRepository;
-    @Autowired
-    private TransactionService transactionService;
+
+    private final AccountRepository accountRepository;
+    private final BankTransactionService transactionService;
+
+    public AccountService(AccountRepository accountRepository, BankTransactionService transactionService) {
+        this.accountRepository = accountRepository;
+        this.transactionService = transactionService;
+    }
 
     public Account createAccount(String recipientName, String pinCode) {
         if (pinCode.length() != 4 || !pinCode.matches("\\d{4}")) {
@@ -69,7 +72,11 @@ public class AccountService {
         transactionService.saveTransaction(toAccountId, amount, "TRANSFER_IN");
     }
 
-    public List<Transaction> getTransactions(Long accountId) {
+    public List<BankTransaction> getTransactions(Long accountId) {
         return transactionService.getTransactionsByAccountId(accountId);
+    }
+
+    public List<BankTransaction> getAllTransactions() {
+        return transactionService.getAllTransactions();
     }
 }
